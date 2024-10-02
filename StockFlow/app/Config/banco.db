@@ -1,0 +1,171 @@
+-- Tabela Empresa
+create table if not exists Empresa (
+    empCnpj varchar(18),
+    empNome varchar(100) unique,
+    empVendas boolean,
+    empTelefone varchar(15),--(XX) XXXXX-XXXX
+    empEmail varchar(120) unique,
+    empSenha varchar(255),
+    constraint pk_empresa primary key (empCnpj)
+);
+
+-- Tabela Cargo
+create table if not exists Cargo (
+    carId integer primary key autoincrement,
+    carCargo varchar(50),
+    empCnpj varchar(18),
+    constraint fk_cargo_empresa foreign key (empCnpj) references Empresa(empCnpj)
+);
+
+-- Tabela Funcionario
+create table if not exists Funcionario (
+    funId integer primary key autoincrement,
+    funCpf varchar(14) unique,--XXX.XXX.XXX-XX
+    funNome varchar(100),
+    funTelefone varchar(15) unique,
+    funEmail varchar(100) unique,
+    funUf varchar(2),
+    funMunicipio varchar(100),
+    funBairro varchar(100),
+    funLogradouro varchar(150),
+    funSituacao boolean,
+    funLogin varchar(50) unique,
+    funSenha varchar(255),
+    carId integer,
+    constraint fk_funcionario_cargo foreign key (carId) references Cargo(carId)
+);
+
+-- Tabela Categoria
+create table if not exists Categoria (
+    catId integer primary key autoincrement,
+    catCategoria varchar(50) unique,
+    empCnpj varchar(18),
+    constraint fk_categoria_empresa foreign key (empCnpj) references Empresa(empCnpj)
+);
+
+-- Tabela Produto
+create table if not exists Produto (
+    proId integer primary key autoincrement,
+    proDescricao varchar(255) unique,
+    proCodigo varchar(50) unique,
+    proCodigoBarra varchar(13) unique,
+    proTipo varchar(50), -- Ex: Kit, Simples, Fabricado, Com variação
+    proUnidade varchar(10), --Ex: Mg, L, Kg
+    proPrecoVenda numeric(10, 2),
+    proPrecoMedio numeric(10, 2),
+    proPrecoCusto numeric(10, 2),
+    proPeso numeric(10, 3),
+    proLargura numeric(10, 2),
+    proAltura numeric(10, 2),
+    proComprimento numeric(10, 2),
+    proEstoque integer,
+    proEstoqueMin integer,
+    proEstoqueMax integer,
+    proLocalizacao varchar(100),
+    proControleLote boolean,
+    catId integer,
+    constraint fk_produto_categoria foreign key (catId) references Categoria(catId)
+);
+
+-- Tabela Contato
+create table if not exists Contato (
+    conId integer primary key autoincrement,
+    conNome varchar(100),
+    conTelefone varchar(15) unique,
+    conEmail varchar(100) UNIQUE,
+    conTipo varchar(4) check(conTipo in ('FORNECEDOR', 'CLIENTE')),
+    conIdentificacao varchar(10) check(conIdentificacao in ('CNPJ', 'CPF')),
+    conIdentificacaoNumero varchar(18), --00.000.000/0000-00  000.000.000-00
+    conCep varchar(9),
+    conUf varchar(2),
+    conMunicipio varchar(100),
+    conBairro varchar(100),
+    conLogradouro varchar(150)
+);
+
+-- Tabela Fornecedor
+create table if not exists Fornecedor (
+    fornIdProduto integer,
+    fornIdContato integer,
+    fornPrincipal boolean,
+    constraint pk_fornecedor primary key (fornIdProduto, fornIdContato),
+    constraint fk_fornecedor_produto foreign key (fornIdProduto) references Produto(proId),
+    constraint fk_fornecedor_contato foreign key (fornIdContato) references Contato(conId)
+);
+
+-- Tabela Lote
+create table if not exists Lote (
+    lotId integer primary key autoincrement,
+    lotCodigo varchar(50),
+    lotQuantidade integer,
+    lotMarca varchar(50),
+    lotFabricacao date,
+    lotValidade date,
+    lotStatus boolean,
+    lotDataEntrega date,
+    lotTimeEntrada time,
+    proId integer,
+    constraint fk_lote_produto foreign key (proId) references Produto(proId)
+);
+
+-- Tabela Entrada
+create table if not exists Entrada (
+    entId integer primary key autoincrement,
+    entData date,
+    entHora time,
+    entObservacao text,
+    entTipo integer check(entTipo in (1, 2, 3, 4, 5, 6, 7, 8)), --'COMPRA','DEVOLUÇÃO_CLIENTE','TRANSFERÊNCIA', 'PRODUÇÃO'
+                                                            --'AJUSTE_INVENTÁRIO','DOAÇÃO','BONIFICAÇÃO','IMPORTAÇÃO'
+    entValorTotal numeric(10, 2),
+    funId integer, 
+    constraint fk_entrada_funcionario foreign key (funId) references Funcionario(funId)
+);
+
+-- Tabela ItemEntrada
+create table if not exists ItemEntrada (
+    itemIdEntrada integer,
+    itemIdLote integer,
+    itemQuantidade integer,
+    itemData date,
+    itemHora time,
+    itemPrecoUnit numeric(10, 2),
+    constraint pk_itementrada primary key (itemIdEntrada, itemIdLote),
+    constraint fk_itementrada_entrada foreign key (itemIdEntrada) references Entrada(entId),
+    constraint fk_itementrada_lote foreign key (itemIdLote) references Lote(lotId)
+);
+
+-- Tabela Saida
+create table if not exists Saida (
+    saiId integer primary key autoincrement,
+    saiData date,
+    saiHora time,
+    saiTipo integer CHECK (saiTipo IN (1, 2, 3, 4, 5, 6, 7, 8, 9)), -- 'VENDA', 'DEVOLUÇÃO_FORNECEDOR', 'TRANSFERÊNCIA',
+                                                                -- 'CONSUMO', 'PERDA', 'QUEBRA', 'VENCIMENTO',
+                                                                -- 'DOAÇÃO', 'BONIFICAÇÃO'
+    saiValorTotal numeric(10, 2),
+    funId integer, 
+    constraint fk_saida_funcionario foreign key (funId) references Funcionario(funId)
+);
+
+-- Tabela ItemSaida
+create table if not exists ItemSaida (
+    itemIdSaida integer,
+    itemIdLote integer,
+    itemQuantidade integer,
+    itemData date,
+    itemHora time,
+    itemPrecoUnit numeric(10, 2),
+    constraint pk_itemsaida primary key (itemIdSaida, itemIdLote),
+    constraint fk_itemsaida_saida foreign key (itemIdSaida) references Saida(saiId),
+    constraint fk_itemsaida_lote foreign key (itemIdLote) references Lote(lotId)
+);
+
+-- Tabela ContatoSaida
+create table if not exists ContatoSaida (
+    cosIdSaida integer,
+    cosIdContato integer,
+    constraint pk_contatosaida primary key (cosIdSaida, cosIdContato),
+    constraint fk_contatosaida_saida foreign key (cosIdSaida) references Saida(saiId),
+    constraint fk_contatosaida_contato foreign key (cosIdContato) references Contato(conId)
+);
+
