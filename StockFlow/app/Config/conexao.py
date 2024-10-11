@@ -106,14 +106,13 @@ class ConexaoSqLite():
             -- Tabela Produto
             create table if not exists Produto (
                 proId integer primary key autoincrement,
-                proDescricao varchar(255) unique,
-                proCodigo varchar(50) unique,
-                proCodigoBarra varchar(13) unique,
+                proDescricao varchar(255),
+                proCodigo varchar(15),
+                proCodigoBarra varchar(13),
                 proTipo varchar(50), -- Ex: Kit, Simples, Fabricado, Com variação
                 proUnidade varchar(10), --Ex: Mg, L, Kg
                 proPrecoVenda numeric(10, 2),
                 proPrecoMedio numeric(10, 2),
-                proPrecoCusto numeric(10, 2),
                 proPeso numeric(10, 3),
                 proLargura numeric(10, 2),
                 proAltura numeric(10, 2),
@@ -133,9 +132,9 @@ class ConexaoSqLite():
                 conNome varchar(100),
                 conTelefone varchar(15) unique,
                 conEmail varchar(100) UNIQUE,
-                conTipo varchar(4) check(conTipo in ('FORNECEDOR', 'CLIENTE')),
-                conIdentificacao varchar(10) check(conIdentificacao in ('CNPJ', 'CPF')),
+                conTipo integer,
                 conIdentificacaoNumero varchar(18), --00.000.000/0000-00  000.000.000-00
+                conIdentificacao integer,
                 conCep varchar(9),
                 conUf varchar(2),
                 conMunicipio varchar(100),
@@ -162,8 +161,6 @@ class ConexaoSqLite():
                 lotFabricacao date,
                 lotValidade date,
                 lotStatus boolean,
-                lotDataEntrega date,
-                lotTimeEntrada time,
                 proId integer,
                 constraint fk_lote_produto foreign key (proId) references Produto(proId)
             );
@@ -174,8 +171,7 @@ class ConexaoSqLite():
                 entData date,
                 entHora time,
                 entObservacao text,
-                entTipo integer check(entTipo in (1, 2, 3, 4, 5, 6, 7, 8)), --'COMPRA','DEVOLUÇÃO_CLIENTE','TRANSFERÊNCIA', 'PRODUÇÃO'
-                                                                        --'AJUSTE_INVENTÁRIO','DOAÇÃO','BONIFICAÇÃO','IMPORTAÇÃO'
+                entTipo integer,
                 entValorTotal numeric(10, 2),
                 funId integer, 
                 constraint fk_entrada_funcionario foreign key (funId) references Funcionario(funId)
@@ -186,8 +182,6 @@ class ConexaoSqLite():
                 itemIdEntrada integer,
                 itemIdLote integer,
                 itemQuantidade integer,
-                itemData date,
-                itemHora time,
                 itemPrecoUnit numeric(10, 2),
                 constraint pk_itementrada primary key (itemIdEntrada, itemIdLote),
                 constraint fk_itementrada_entrada foreign key (itemIdEntrada) references Entrada(entId),
@@ -199,9 +193,7 @@ class ConexaoSqLite():
                 saiId integer primary key autoincrement,
                 saiData date,
                 saiHora time,
-                saiTipo integer CHECK (saiTipo IN (1, 2, 3, 4, 5, 6, 7, 8, 9)), -- 'VENDA', 'DEVOLUÇÃO_FORNECEDOR', 'TRANSFERÊNCIA',
-                                                                            -- 'CONSUMO', 'PERDA', 'QUEBRA', 'VENCIMENTO',
-                                                                            -- 'DOAÇÃO', 'BONIFICAÇÃO'
+                saiTipo integer, 
                 saiValorTotal numeric(10, 2),
                 funId integer, 
                 constraint fk_saida_funcionario foreign key (funId) references Funcionario(funId)
@@ -212,8 +204,6 @@ class ConexaoSqLite():
                 itemIdSaida integer,
                 itemIdLote integer,
                 itemQuantidade integer,
-                itemData date,
-                itemHora time,
                 itemPrecoUnit numeric(10, 2),
                 constraint pk_itemsaida primary key (itemIdSaida, itemIdLote),
                 constraint fk_itemsaida_saida foreign key (itemIdSaida) references Saida(saiId),
@@ -228,6 +218,29 @@ class ConexaoSqLite():
                 constraint fk_contatosaida_saida foreign key (cosIdSaida) references Saida(saiId),
                 constraint fk_contatosaida_contato foreign key (cosIdContato) references Contato(conId)
             );
+
+            create table pagamento (
+                pagId integer primary key autoincrement,
+                pagValor numeric(10, 2),
+                pagParcelas integer, 
+                pagDataIni date,
+                pagDataFim date,
+                pagStatus integer, 
+                pagMetodoPagamento integer, 
+                saiId integer constraint fk_pagamento_saida foreign key (saiId) references Saida(saiId),
+                entId integer constraint fk_pagamento_entrada foreign key (entId) references Entrada(entId)
+            );
+
+
+            create table Parcelas (
+                parId integer constraint pk_parcelas primary key autoincrement,
+                parMetPagamento integer,
+                parValor numeric(10, 2),
+                parData date, 
+                parStatus integer, 
+                pagId integer constraint fk_parcelas_pagamento foreign key (pagId) references Pagamento(pagId)
+            );
+
             """)
             conn.commit()
             self.cursor.close()
