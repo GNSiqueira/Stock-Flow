@@ -6,10 +6,8 @@ from app.Config.conexao import ConexaoSqLite
 
 if __name__ == "__main__":
     db = ConexaoSqLite()
-    db.conectar()
     db.create_table()
     db.dados_iniciais()
-    db.desconectar()
     
     app = QApplication(sys.argv)
 

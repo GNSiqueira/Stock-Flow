@@ -1,6 +1,6 @@
 -- Tabela Empresa
 create table if not exists Empresa (
-    empCnpj varchar(18),
+    empCnpj varchar(18) unique,
     empNome varchar(100) unique,
     empVendas boolean,
     empTelefone varchar(15),--(XX) XXXXX-XXXX
@@ -49,7 +49,7 @@ create table if not exists Produto (
     proDescricao varchar(255),
     proCodigo varchar(15),
     proCodigoBarra varchar(13),
-    proTipo varchar(50), -- Ex: Kit, Simples, Fabricado, Com variação
+    proTipo integer, -- Ex: Kit, Simples, Fabricado, Com variação
     proUnidade varchar(10), --Ex: Mg, L, Kg
     proPrecoVenda numeric(10, 2),
     proPrecoMedio numeric(10, 2),
@@ -159,7 +159,7 @@ create table if not exists ContatoSaida (
     constraint fk_contatosaida_contato foreign key (cosIdContato) references Contato(conId)
 );
 
-create table pagamento (
+create table if not exists pagamento (
     pagId integer primary key autoincrement,
     pagValor numeric(10, 2),
     pagParcelas integer, 
@@ -167,16 +167,19 @@ create table pagamento (
     pagDataFim date,
     pagStatus integer, 
     pagMetodoPagamento integer, 
-    saiId integer constraint fk_pagamento_saida foreign key (saiId) references Saida(saiId),
-    entId integer constraint fk_pagamento_entrada foreign key (entId) references Entrada(entId)
+    saiId integer,
+    entId integer,
+    constraint fk_pagamento_saida foreign key (saiId) references Saida(saiId),
+    constraint fk_pagamento_entrada foreign key (entId) references Entrada(entId)
 );
 
 
-create table Parcelas (
+create table if not exists Parcelas (
     parId integer constraint pk_parcelas primary key autoincrement,
     parMetPagamento integer,
     parValor numeric(10, 2),
     parData date, 
     parStatus integer, 
-    pagId integer constraint fk_parcelas_pagamento foreign key (pagId) references Pagamento(pagId)
+    pagId integer,
+    constraint fk_parcelas_pagamento foreign key (pagId) references Pagamento(pagId)
 );
