@@ -1,0 +1,8 @@
+root = true #Procurar arquivos padrões
+
+[*.py]
+indent_style = tab #Indentação  com tabs
+end_of_line = lf #Quebra  de linha
+charset = utf-8 #Caracter 
+trim_trailing_whitespace = true  #Remover espaços em branco no final da linha
+insert_final_newline = true   #Inserir nova linha no final do arquivo
