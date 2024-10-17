@@ -4,7 +4,7 @@ from sqlite3 import Error as sqliteError
 
 class Conexao():
     def conectar(self):
-        try: 
+        try:
             conn = connect(
                 host="localhost",
                 database="StockFlow",
@@ -12,10 +12,10 @@ class Conexao():
                 password="123456"
             )
             return conn
-    
+
         except (Exception, Error) as error:
             return ('Erro ao conectar ao banco de dados!')
-        
+
     def desconectar(self, conn):
         try:
             if conn is not None:
@@ -23,35 +23,39 @@ class Conexao():
                 return ('Conexão fechada com sucesso!')
 
         except (Exception, Error) as error:
-            return ('Erro ao fechar a conexão!') 
-        
-
-class ConexaoSqLite(): 
+            return ('Erro ao fechar a conexão!')
+class ConexaoSqLite():
     def __init__(self, database = 'StockFlow.db') -> None:
         self.database = database
 
     def conectar(self):
-        try: 
+        try:
             conn = sqlite.connect(self.database)
             print('Conexão estabelecida com sucesso!')
             return conn
-    
+
         except (Exception, sqliteError) as error:
             print('Erro ao conectar ao banco de dados:', error)
             return {
-                'status': 1,
+                'code': 500,
                 'msg': ('Erro ao conectar ao banco de dados: ', error)
             }
-        
+
     def desconectar(self, conn):
         try:
-            if conn is not None: 
+            if conn is not None:
                 conn.close()
                 print('Conexão fechada com sucesso!')
-                return('Conexão fechada com sucesso!')
+                return{
+                    'code':200,
+                    'msg':'Conexão fechada com sucesso!'
+                }
         except (Exception, sqliteError) as error:
             print('Erro ao fechar a conexão!')
-            return('Erro ao fechar a conexão!')
+            return {
+                'code':500,
+                'msg':'Erro ao fechar a conexão!'
+            }
 
     def create_table(self):
         try:
@@ -173,7 +177,7 @@ create table if not exists Entrada (
     entObservacao text,
     entTipo integer,
     entValorTotal numeric(10, 2),
-    funId integer, 
+    funId integer,
     constraint fk_entrada_funcionario foreign key (funId) references Funcionario(funId)
 );
 
@@ -193,9 +197,9 @@ create table if not exists Saida (
     saiId integer primary key autoincrement,
     saiData date,
     saiHora time,
-    saiTipo integer, 
+    saiTipo integer,
     saiValorTotal numeric(10, 2),
-    funId integer, 
+    funId integer,
     constraint fk_saida_funcionario foreign key (funId) references Funcionario(funId)
 );
 
@@ -222,11 +226,11 @@ create table if not exists ContatoSaida (
 create table if not exists pagamento (
     pagId integer primary key autoincrement,
     pagValor numeric(10, 2),
-    pagParcelas integer, 
+    pagParcelas integer,
     pagDataIni date,
     pagDataFim date,
-    pagStatus integer, 
-    pagMetodoPagamento integer, 
+    pagStatus integer,
+    pagMetodoPagamento integer,
     saiId integer,
     entId integer,
     constraint fk_pagamento_saida foreign key (saiId) references Saida(saiId),
@@ -238,109 +242,108 @@ create table if not exists Parcelas (
     parId integer constraint pk_parcelas primary key autoincrement,
     parMetPagamento integer,
     parValor numeric(10, 2),
-    parData date, 
-    parStatus integer, 
+    parData date,
+    parStatus integer,
     pagId integer,
     constraint fk_parcelas_pagamento foreign key (pagId) references Pagamento(pagId)
 );
 """)
             conn.commit()
-            self.cursor.close()
-            self.desconectar(conn)
             print('Tabelas criadas com sucesso!')
-            return 'Comando executado com sucesso!'
+            return {
+                'code': 200,
+                'msg': 'Tabelas criadas!'
+            }
 
         except (Exception, sqliteError) as error:
             retorno = {
-                'status': 1,
+                'code': 500,
                 'msg': ('Erro ao executar o comando:', error)
             }
             print(retorno)
             return retorno
-        
+
+        finally:
+            self.cursor.close()
+            self.desconectar(conn)
+
     def dados_iniciais(self):
         try:
             conn = self.conectar()
             cursor = conn.cursor()
             cursor.executescript("""
             -- Inserir na tabela Empresa
-INSERT INTO Empresa (empCnpj, empNome, empVendas, empTelefone, empEmail, empSenha) 
+INSERT INTO Empresa (empCnpj, empNome, empVendas, empTelefone, empEmail, empSenha)
 VALUES ('00.000.000/0001-91', 'Empresa X', true, '(11) 91234-5678', 'empresa@x.com', 'senha123');
 
 -- Inserir na tabela Cargo
-INSERT INTO Cargo (carCargo, empCnpj) 
+INSERT INTO Cargo (carCargo, empCnpj)
 VALUES ('Gerente', '00.000.000/0001-91');
 
 -- Inserir na tabela Funcionario
-INSERT INTO Funcionario (funCpf, funNome, funTelefone, funEmail, funUf, funMunicipio, funBairro, funLogradouro, funSituacao, funLogin, funSenha, carId) 
+INSERT INTO Funcionario (funCpf, funNome, funTelefone, funEmail, funUf, funMunicipio, funBairro, funLogradouro, funSituacao, funLogin, funSenha, carId)
 VALUES ('000.000.000-00', 'João Silva', '(11) 92345-6789', 'joao@x.com', 'SP', 'São Paulo', 'Centro', 'Rua A, 123', true, 'joao123', 'senha123', 1);
 
 -- Inserir na tabela Categoria
-INSERT INTO Categoria (catCategoria, empCnpj) 
+INSERT INTO Categoria (catCategoria, empCnpj)
 VALUES ('Eletrônicos', '00.000.000/0001-91');
 
 -- Inserir na tabela Produto
-INSERT INTO Produto (proDescricao, proCodigo, proCodigoBarra, proTipo, proUnidade, proPrecoVenda, proPrecoMedio, proPeso, proLargura, proAltura, proComprimento, proEstoque, proEstoqueMin, proEstoqueMax, proLocalizacao, proControleLote, catId) 
+INSERT INTO Produto (proDescricao, proCodigo, proCodigoBarra, proTipo, proUnidade, proPrecoVenda, proPrecoMedio, proPeso, proLargura, proAltura, proComprimento, proEstoque, proEstoqueMin, proEstoqueMax, proLocalizacao, proControleLote, catId)
 VALUES ('Smartphone XYZ', 'SP001', '7891234567890', 1, 'Un', 1500.00, 1400.00, 0.2, 7.5, 15.0, 0.8, 50, 10, 100, 'A1', true, 1);
 
 -- Inserir na tabela Contato
-INSERT INTO Contato (conNome, conTelefone, conEmail, conTipo, conIdentificacaoNumero, conIdentificacao, conCep, conUf, conMunicipio, conBairro, conLogradouro) 
+INSERT INTO Contato (conNome, conTelefone, conEmail, conTipo, conIdentificacaoNumero, conIdentificacao, conCep, conUf, conMunicipio, conBairro, conLogradouro)
 VALUES ('Fornecedor Y', '(11) 93456-7890', 'fornecedor@y.com', 1, '12.345.678/0001-90', 1, '12345-678', 'SP', 'São Paulo', 'Centro', 'Rua B, 456');
 
 -- Inserir na tabela Fornecedor
-INSERT INTO Fornecedor (fornIdProduto, fornIdContato, fornPrincipal) 
+INSERT INTO Fornecedor (fornIdProduto, fornIdContato, fornPrincipal)
 VALUES (1, 1, true);
 
 -- Inserir na tabela Lote
-INSERT INTO Lote (lotCodigo, lotQuantidade, lotMarca, lotFabricacao, lotValidade, lotStatus, proId) 
+INSERT INTO Lote (lotCodigo, lotQuantidade, lotMarca, lotFabricacao, lotValidade, lotStatus, proId)
 VALUES ('LT001', 100, 'Marca X', '2023-01-01', '2025-01-01', true, 1);
 
 -- Inserir na tabela Entrada
-INSERT INTO Entrada (entData, entHora, entObservacao, entTipo, entValorTotal, funId) 
+INSERT INTO Entrada (entData, entHora, entObservacao, entTipo, entValorTotal, funId)
 VALUES ('2024-10-11', '14:30:00', 'Compra de estoque', 1, 5000.00, 1);
 
 -- Inserir na tabela ItemEntrada
-INSERT INTO ItemEntrada (itemIdEntrada, itemIdLote, itemQuantidade, itemPrecoUnit) 
+INSERT INTO ItemEntrada (itemIdEntrada, itemIdLote, itemQuantidade, itemPrecoUnit)
 VALUES (1, 1, 50, 100.00);
 
 -- Inserir na tabela Saida
-INSERT INTO Saida (saiData, saiHora, saiTipo, saiValorTotal, funId) 
+INSERT INTO Saida (saiData, saiHora, saiTipo, saiValorTotal, funId)
 VALUES ('2024-10-12', '15:00:00', 2, 3000.00, 1);
 
 -- Inserir na tabela ItemSaida
-INSERT INTO ItemSaida (itemIdSaida, itemIdLote, itemQuantidade, itemPrecoUnit) 
+INSERT INTO ItemSaida (itemIdSaida, itemIdLote, itemQuantidade, itemPrecoUnit)
 VALUES (1, 1, 10, 150.00);
 
 -- Inserir na tabela ContatoSaida
-INSERT INTO ContatoSaida (cosIdSaida, cosIdContato) 
+INSERT INTO ContatoSaida (cosIdSaida, cosIdContato)
 VALUES (1, 1);
 
 -- Inserir na tabela Pagamento
-INSERT INTO Pagamento (pagValor, pagParcelas, pagDataIni, pagDataFim, pagStatus, pagMetodoPagamento, saiId, entId) 
+INSERT INTO Pagamento (pagValor, pagParcelas, pagDataIni, pagDataFim, pagStatus, pagMetodoPagamento, saiId, entId)
 VALUES (3000.00, 3, '2024-10-12', '2025-01-12', 1, 2, 1, null);
 
 -- Inserir na tabela Parcelas
-INSERT INTO Parcelas (parMetPagamento, parValor, parData, parStatus, pagId) 
+INSERT INTO Parcelas (parMetPagamento, parValor, parData, parStatus, pagId)
 VALUES (2, 1000.00, '2024-11-12', 1, 1);
 """)
             conn.commit()
-            cursor.close()
-            self.desconectar(conn)
-            retorno = 'Inserindo dados iniciais com sucesso!'
-            print(retorno)
-            return retorno
+            return {
+                'code' : 200,
+                'msg' : 'Dados iniciais inseridos!'
+            }
 
         except (Exception, sqliteError) as error:
             retorno = {
-                'status': 1,
+                'code': 500,
                 'msg': ('Erro ao executar o comando:', error)
             }
 
-            conn.rollback()
-
-            if error == "('Erro ao executar o comando:', IntegrityError('UNIQUE constraint failed: Empresa.empCnpj'))}":
-                obanco = 'Dados já inseridos!'
-                print(obanco)
-            else: 
-                print(retorno)
-            return retorno
+        finally:
+            cursor.close()
+            self.desconectar(conn)
