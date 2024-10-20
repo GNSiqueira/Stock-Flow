@@ -31,11 +31,9 @@ class ConexaoSqLite():
     def conectar(self):
         try:
             conn = sqlite.connect(self.database)
-            print('Conexão estabelecida com sucesso!')
             return conn
 
         except (Exception, sqliteError) as error:
-            print('Erro ao conectar ao banco de dados:', error)
             return {
                 'code': 500,
                 'msg': ('Erro ao conectar ao banco de dados: ', error)
@@ -45,16 +43,14 @@ class ConexaoSqLite():
         try:
             if conn is not None:
                 conn.close()
-                print('Conexão fechada com sucesso!')
                 return{
                     'code':200,
                     'msg':'Conexão fechada com sucesso!'
                 }
         except (Exception, sqliteError) as error:
-            print('Erro ao fechar a conexão!')
             return {
                 'code':500,
-                'msg':'Erro ao fechar a conexão!'
+                'msg':('Erro ao fechar a conexão:', error)
             }
 
     def create_table(self):
@@ -249,7 +245,6 @@ create table if not exists Parcelas (
 );
 """)
             conn.commit()
-            print('Tabelas criadas com sucesso!')
             return {
                 'code': 200,
                 'msg': 'Tabelas criadas!'
@@ -258,7 +253,7 @@ create table if not exists Parcelas (
         except (Exception, sqliteError) as error:
             retorno = {
                 'code': 500,
-                'msg': ('Erro ao executar o comando:', error)
+                'msg': ('Erro criar tabelas:', error)
             }
             print(retorno)
             return retorno
@@ -270,8 +265,8 @@ create table if not exists Parcelas (
     def dados_iniciais(self):
         try:
             conn = self.conectar()
-            cursor = conn.cursor()
-            cursor.executescript("""
+            self.cursor = conn.cursor()
+            self.cursor.executescript("""
             -- Inserir na tabela Empresa
 INSERT INTO Empresa (empCnpj, empNome, empVendas, empTelefone, empEmail, empSenha)
 VALUES ('00.000.000/0001-91', 'Empresa X', true, '(11) 91234-5678', 'empresa@x.com', 'senha123');
@@ -339,11 +334,11 @@ VALUES (2, 1000.00, '2024-11-12', 1, 1);
             }
 
         except (Exception, sqliteError) as error:
-            retorno = {
+            return {
                 'code': 500,
-                'msg': ('Erro ao executar o comando:', error)
+                'msg': ('Erro ao inserir dados iniciais: ', error)
             }
 
         finally:
-            cursor.close()
+            self.cursor.close()
             self.desconectar(conn)
