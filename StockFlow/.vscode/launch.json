@@ -8,8 +8,11 @@
             "name": "Depurador do Python: Arquivo Atual",
             "type": "debugpy",
             "request": "launch",
-            "program": "run.py", 
-            "console": "integratedTerminal"
+            "program": "${file}", 
+            "console": "internalConsole", 
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
         }
     ]
 }
