@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import QApplication
 from app import MainWindow
-from app.Config.conexao import ConexaoSqLite
+from app.config.conexao import ConexaoSqLite
 
 
 if __name__ == "__main__":

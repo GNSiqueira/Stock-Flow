@@ -1,6 +1,6 @@
-from app.Config.conexao import ConexaoSqLite
+from app.config.conexao import ConexaoSqLite
 from sqlite3 import Error as sqliteError
-from app.Config.conexao import response
+from app.config.conexao import response
 
 
 class Empresa():
