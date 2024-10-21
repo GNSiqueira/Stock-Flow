@@ -1,6 +1,7 @@
 from psycopg2 import connect, Error
 import sqlite3 as sqlite
 from sqlite3 import Error as sqliteError
+from app.config.response import Response
 
 class Conexao():
     def conectar(self):
@@ -52,6 +53,21 @@ class ConexaoSqLite():
                 'code':500,
                 'msg':('Erro ao fechar a conexão:', error)
             }
+
+    def execute(self, query):
+        conn = self.conectar()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            result = cursor.fetchall()
+            conn.commit()
+            return Response(200, 'Executado com sucesso!', result)
+        except(Exception, Error) as error:
+            conn.rollback()
+            return Response(500, 'Erro ao executar!', error)
+        finally:
+            cursor.close()
+            self.desconectar(conn)
 
     def create_table(self):
         try:
