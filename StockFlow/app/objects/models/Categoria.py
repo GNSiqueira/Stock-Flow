@@ -135,9 +135,3 @@ class Categoria:
 
     def __str__(self):
         return f"catId: {self.__catId}\ncatCategoria: {self.__catCategoria}\nempCnpj: {self.__empCnpj}"
-
-cat = Categoria(None, "Outro Teste Categoria", "00.000.000/0001-91")
-cat.create()
-cat.catCategoria = "Outro teste"
-cat.update()
-cat.delete()
