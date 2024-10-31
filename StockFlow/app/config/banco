@@ -1,10 +1,10 @@
 -- Tabela Empresa
 create table if not exists Empresa (
-    empCnpj varchar(18) unique,
-    empNome varchar(100) unique,
+    empCnpj varchar(18),
+    empNome varchar(100),
     empVendas boolean,
     empTelefone varchar(15),--(XX) XXXXX-XXXX
-    empEmail varchar(120) unique,
+    empEmail varchar(120),
     empSenha varchar(255),
     constraint pk_empresa primary key (empCnpj)
 );
@@ -20,16 +20,16 @@ create table if not exists Cargo (
 -- Tabela Funcionario
 create table if not exists Funcionario (
     funId integer primary key autoincrement,
-    funCpf varchar(14) unique,--XXX.XXX.XXX-XX
+    funCpf varchar(14),--XXX.XXX.XXX-XX
     funNome varchar(100),
-    funTelefone varchar(15) unique,
-    funEmail varchar(100) unique,
+    funTelefone varchar(15),
+    funEmail varchar(100),
     funUf varchar(2),
     funMunicipio varchar(100),
     funBairro varchar(100),
     funLogradouro varchar(150),
     funSituacao boolean,
-    funLogin varchar(50) unique,
+    funLogin varchar(50),
     funSenha varchar(255),
     carId integer,
     constraint fk_funcionario_cargo foreign key (carId) references Cargo(carId)
@@ -38,7 +38,7 @@ create table if not exists Funcionario (
 -- Tabela Categoria
 create table if not exists Categoria (
     catId integer primary key autoincrement,
-    catCategoria varchar(50) unique,
+    catCategoria varchar(50),
     empCnpj varchar(18),
     constraint fk_categoria_empresa foreign key (empCnpj) references Empresa(empCnpj)
 );
@@ -70,8 +70,8 @@ create table if not exists Produto (
 create table if not exists Contato (
     conId integer primary key autoincrement,
     conNome varchar(100),
-    conTelefone varchar(15) unique,
-    conEmail varchar(100) UNIQUE,
+    conTelefone varchar(15),
+    conEmail varchar(100),
     conTipo integer,
     conIdentificacaoNumero varchar(18), --00.000.000/0000-00  000.000.000-00
     conIdentificacao integer,
