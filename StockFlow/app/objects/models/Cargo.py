@@ -12,13 +12,6 @@ class Cargo:
 
         self.__carCargo = str(carCargo).strip()
 
-        conexao = ConexaoSqLite()
-        if (conexao.execute("select count(*) from empresa where empcnpj = '{}'".format(empCnpj))).data[0][0] > 0:
-            self.__empCnpj = str(empCnpj)
-        else:
-            raise Exception('CNPJ inválido!')
-
-
     def create(self):
         conexao = ConexaoSqLite()
         conn = conexao.conectar()
@@ -87,7 +80,6 @@ class Cargo:
             conexao.desconectar(conn)
 
     def delete(self):
-
         conexao = ConexaoSqLite()
         response = conexao.execute("select carid, carcargo from cargo where carcargo = '{}' and  empCnpj = '{}';".format(self.__carCargo, self.__empCnpj))
         if len(response.data) == 1:
