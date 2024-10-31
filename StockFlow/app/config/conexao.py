@@ -3,14 +3,14 @@ from sqlite3 import Error as sqliteError
 from app.config.response import Response
 class ConexaoSqLite:
     def __init__(self, database='StockFlow.db') -> None:
-        self.database = database
+        self.__database = database
         self.conn = None
         self.cursor = None
         self.__erro = False
 
     def __enter__(self):
         try:
-            self.conn = sqlite.connect(self.database)
+            self.conn = sqlite.connect(self.__database)
             self.cursor = self.conn.cursor()
             return self
         except (Exception, sqliteError) as error:
