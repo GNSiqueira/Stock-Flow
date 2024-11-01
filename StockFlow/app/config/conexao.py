@@ -31,13 +31,23 @@ class ConexaoSqLite:
         except (Exception, sqliteError) as error:
             return Response(500, 'Error disconnecting from database', error)
 
-    def execute(self, query):
+    def execute(self, query, info = None) -> Response:
         try:
-            self.cursor.execute(query)
+            if info == None:
+                self.cursor.execute(query)
+
+            else:
+                self.cursor.execute(query, info)
+
             result = self.cursor.fetchall()
+
             return Response(200, 'Success', result)
+
         except(Exception, sqliteError) as error:
             self.__erro = True
+
+            print("Error executing query: ", error)
+
             raise Response(500, 'Error executing query', error)
 
     def create_table(self):

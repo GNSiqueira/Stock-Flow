@@ -10,10 +10,17 @@ class Funcionario:
         elif type(funId) is not int:
             raise Exception('Id inválido!')
         self.__funId = funId
+
+        if funCpf !=  14 and funCpf[3] != '.' and funCpf[7] != '.' and funCpf[11] != '-': # 000.000.000-00
+            raise Exception('Cpf inválido!')
         self.__funCpf = funCpf
+
         self.__funNome = funNome
         self.__funTelefone = funTelefone
+        if '@' not in funEmail:
+            raise Exception('Email invático!')
         self.__funEmail = funEmail
+
         self.__funUf = funUf
         self.__funMunicipio = funMunicipio
         self.__funBairro = funBairro
@@ -21,6 +28,7 @@ class Funcionario:
         self.__funSituacao = funSituacao
         self.__funLogin = funLogin
         self.__funSenha = funSenha
+
         with ConexaoSqLite() as conexao:
             if not conexao:
                 return Response(500, "Erro ao conectar ao banco de dados!", {})
@@ -139,36 +147,101 @@ class Funcionario:
     def carId(self, carId):
         self.__carId = carId
 
-    def create(self):
+    def create(self) -> Response:
         with ConexaoSqLite() as conexao:
             if not conexao:
                 return Response(500, "Erro ao conectar ao banco de dados!", {})
+
             try:
                 # Verificar se o funcionario já existe
                 if (conexao.execute(f"select count(*) from funcionario where funCpf = {self.__funCpf};")).data[0][0] == 0 and (conexao.execute(f"select count(*) from funcionario where funLogin = {self.__funLogin};")).data[0][0] == 0:
+                    query = """
+                        INSERT INTO Funcionario (
+                            funCpf,
+                            funNome,
+                            funTelefone,
+                            funEmail,
+                            funUf,
+                            funMunicipio,
+                            funBairro,
+                            funLogradouro,
+                            funSituacao,
+                            funLogin,
+                            funSenha,
+                            carId
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """
+                    info = (
+                        self.__funCpf,
+                        self.__funNome,
+                        self.__funTelefone,
+                        self.__funEmail,
+                        self.__funUf,
+                        self.__funMunicipio,
+                        self.__funBairro,
+                        self.__funLogradouro,
+                        self.__funSituacao,
+                        self.__funLogin,
+                        self.__funSenha,
+                        self.__carId
+                    )
+                    conexao.execute(query, info)
+                    self.funId = conexao.cursor.lastrowid
+                else:
+                    return Response(400, "Funcionário já existe!", {})
+            except(Exception, sqliteError) as error:
+                return Response(500, "Erro ao criar o funcionário!", {error})
 
-                    query = (f"insert into funcionario (funCpf, funNome, funTelefone, funEmail, funUf, funMinicipio, funBairro, funLogradouro, funSituacao, funLogin, funSenha, carId) values (('{self.__funCpf}', '{self.__funNome}', '{self.__funTelefone}', '{self.__funEmail}', '{self.__funUf}', '{self.__funMinicipio}', '{self.__funBairro}', '{self.__funLogradouro}', '{self.__funSituacao}', '{self.__funLogin}', '{self.__funSenha}', '{self.__carId}')")
-                    #conexao.execute(")
-                    pass
-            except:
-                pass
-            pass
-
+            return Response(200, "Funcionário criado com sucesso!", {})
 
     @classmethod
-    def read(cls, empCnpj):
-        pass
+    def read(cls, emp_cnpj: str) -> Response:
+        with ConexaoSqLite() as conexao:
+            if not conexao:
+                return Response(500, "Erro ao conectar ao banco de dados!", {})
 
-    def delete(self):
-        pass
+            try:
+                query = """
+                    SELECT f.* FROM funcionario f
+                    INNER JOIN cargo c
+                    ON f.carId = c.carId
+                    WHERE c.empCnpj = ?
+                """
+                result = conexao.execute(query, (emp_cnpj,)).data
+                funcionarios = []
+                for row in  result:
+                    try:
+                        funcionario = cls(*row)
+                        print(funcionario)
+                        funcionarios.append(funcionario)
+                        print(funcionarios)
+                    except TypeError as e:
+                        print(f"Erro ao criar funcionário: {e}")
+                    except IndexError as e:
+                        print(f"Registro incompleto: {e}")
+                    except Exception as e:
+                        print(f"Erro inesperado: {e}")
 
-    def update(self):
-        pass
+                if funcionarios == []:
+                    return Response(404, "Funcionário não encontrado!", {})
 
-    def __str__(self):
-        return ("funId: {}\nfunCpf: {}\nfunNome: {}\nfunTelefone: {}\nfunEmail: {}\nfunUf: {}\nfunMunicipio: {}\nfunBairro: {}\nfunLogradouro: {}\nfunSituacao: {}\nfunLogin: {}\nfunSenha: {}\ncarId: {}".format(self.__funId, self.__funCpf, self.__funNome, self.__funTelefone, self.__funEmail, self.__funUf, self.__funMunicipio, self.__funBairro, self.__funLogradouro, self.__funSituacao, self.__funLogin, self.__funSenha, self.__carId))
+            except sqliteError as e:
+                return Response(500, f"Erro ao buscar funcionários: {e}", {})
+            except Exception as e:
+                return Response(500, f"Erro inesperado: {e}", {})
 
+        return Response(200, "Funcionários encontrados com sucesso!", funcionarios)
+        def delete(self) -> Response:
+            pass
 
-fun = Funcionario(None, '1', 'Nome', 'Telefone', 'Email', 'UF', 'Municipio', 'Bairro', 'Logradouro', True, '1', 'Senha', 1)
+        def update(self) -> Response:
+            pass
 
-fun.create()
+        def __str__(self):
+            return ("funId: {}\nfunCpf: {}\nfunNome: {}\nfunTelefone: {}\nfunEmail: {}\nfunUf: {}\nfunMunicipio: {}\nfunBairro: {}\nfunLogradouro: {}\nfunSituacao: {}\nfunLogin: {}\nfunSenha: {}\ncarId: {}".format(self.__funId, self.__funCpf, self.__funNome, self.__funTelefone, self.__funEmail, self.__funUf, self.__funMunicipio, self.__funBairro, self.__funLogradouro, self.__funSituacao, self.__funLogin, self.__funSenha, self.__carId))
+
+fun = Funcionario.read("00.000.000/0001-91")
+print(fun.msg)
+for i in fun.data:
+    print(i, '\n\n')
+
