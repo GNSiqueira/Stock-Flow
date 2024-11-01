@@ -144,7 +144,15 @@ class Funcionario:
             if not conexao:
                 return Response(500, "Erro ao conectar ao banco de dados!", {})
             try:
-                if 
+                # Verificar se o funcionario já existe
+                if (conexao.execute(f"select count(*) from funcionario where funCpf = {self.__funCpf};")).data[0][0] == 0 and (conexao.execute(f"select count(*) from funcionario where funLogin = {self.__funLogin};")).data[0][0] == 0:
+
+                    query = (f"insert into funcionario (funCpf, funNome, funTelefone, funEmail, funUf, funMinicipio, funBairro, funLogradouro, funSituacao, funLogin, funSenha, carId) values (('{self.__funCpf}', '{self.__funNome}', '{self.__funTelefone}', '{self.__funEmail}', '{self.__funUf}', '{self.__funMinicipio}', '{self.__funBairro}', '{self.__funLogradouro}', '{self.__funSituacao}', '{self.__funLogin}', '{self.__funSenha}', '{self.__carId}')")
+                    #conexao.execute(")
+                    pass
+            except:
+                pass
+            pass
 
 
     @classmethod
@@ -164,5 +172,3 @@ class Funcionario:
 fun = Funcionario(None, '1', 'Nome', 'Telefone', 'Email', 'UF', 'Municipio', 'Bairro', 'Logradouro', True, '1', 'Senha', 1)
 
 fun.create()
-
-print(fun)
