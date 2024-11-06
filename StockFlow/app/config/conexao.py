@@ -8,6 +8,22 @@ class ConexaoSqLite:
         self.cursor = None
         self.__erro = False
 
+    # def conectar(self):
+    #     try:
+    #         self.conn = sqlite.connect(self.__database)
+    #         self.cursor = self.conn.cursor()
+    #         return self.conn
+    #     except (Exception, sqliteError) as error:
+    #         return Response(500, 'Error connecting to database', error)
+
+    # def desconectar(self):
+    #     try:
+    #         if self.conn:
+    #             self.conn.close()
+    #         return Response(200, 'Success disconnecting from database', {})
+    #     except (Exception, sqliteError) as error:
+    #         return Response(500, 'Error disconnecting from database', error)
+
     def __enter__(self):
         try:
             self.conn = sqlite.connect(self.__database)
@@ -22,7 +38,7 @@ class ConexaoSqLite:
                 print("Deu erro")
                 self.conn.rollback()
             else:
-                print("Deu certo")
+                #print("Deu certo")
                 self.conn.commit()
             if self.cursor:
                 self.cursor.close()
@@ -273,7 +289,7 @@ class ConexaoSqLite:
 
                 -- Inserir na tabela Funcionario
                 INSERT INTO Funcionario (funCpf, funNome, funTelefone, funEmail, funUf, funMunicipio, funBairro, funLogradouro, funSituacao, funLogin, funSenha, carId)
-                VALUES ('000.000.000-00', 'João Silva', '(11) 92345-6789', 'joao@x.com', 'SP', 'São Paulo', 'Centro', 'Rua A, 123', true, 'joao123', 'senha123', 1);
+                VALUES ('000.000.000-00', 'João Silva', '(17) 91234-5678', 'joao@x.com', 'SP', 'São Paulo', 'Centro', 'Rua A, 123', true, 'joao123', 'senha123', 1);
 
                 -- Inserir na tabela Categoria
                 INSERT INTO Categoria (catCategoria, empCnpj)
