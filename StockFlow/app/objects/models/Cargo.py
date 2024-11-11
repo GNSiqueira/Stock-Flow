@@ -5,102 +5,96 @@ from app.config.response import Response
 
 class Cargo:
     def __init__(self, carId, carCargo, empCnpj):
-
+        #region Formataçao de Id
         self.__carId = carId if carId else 0
         if not isinstance(self.__carId, int):
             raise Exception('Id deve ser inteiro!')
-
+        #endregion
+        #region Formataçao de Cargo
         self.__carCargo = str(carCargo).strip()
+        #endregion
+        #region Formataçao de CNPJ
+        if  empCnpj[2] != '.' or empCnpj[6] != '.' or empCnpj[10] != '/' or empCnpj[15] != '-' or len(empCnpj) != 18:
+            raise Exception('Formato de CNPJ inválido!')
+        else:
+            t = empCnpj.replace('.','').replace('/','').replace('-','')
+            for i in t:
+                if type(int(i)) != int:
+                    raise Exception('Formato de CNPJ inválido!')
+        self.__empCnpj = str(empCnpj)
+        #endregion
 
     def create(self):
-        conexao = ConexaoSqLite()
-        conn = conexao.conectar()
-        try:
-            cursor = conn.cursor()
+        with ConexaoSqLite() as conexao:
+            if conexao is None:
+                return Response(500, 'Erro ao conectar com o banco de dados!', {})
 
-            # Verificar se a cargo já existe
-            result = cursor.execute("SELECT count(*) FROM Cargo WHERE carCargo = ? AND empCnpj = ?;",(self.__carCargo, self.__empCnpj)).fetchone()
-            if result[0] > 0:
-                return {
-                    'code': 400,
-                    'msg': 'Esta cargo já existe!',
-                    'data': {}
-                }
-
-            # Cadastra a cargo
-            cursor.execute("INSERT INTO Cargo(carCargo, empCnpj) VALUES (?, ?);",(self.__carCargo, self.__empCnpj))
-            conn.commit()
-
-            # Obtém o carId da nova cargo
-            self.__carId = cursor.execute("SELECT carId FROM Cargo WHERE carCargo = ? AND empCnpj = ?;",
-                                        (self.__carCargo, self.__empCnpj)).fetchone()[0]
-
-            return {
-                'code': 200,
-                'msg': 'Cadastrado com sucesso!',
-                'data': {
-                    'carId': self.__carId,
-                    'carCargo': self.__carCargo,
-                    'empCnpj': self.__empCnpj
-                }
-            }
-
-        except Exception as error:
-            conn.rollback()
-            return {
-                'code': 500,
-                'msg': 'Erro ao cadastrar!',
-                'data': str(error)
-            }
-        finally:
-            cursor.close()
-            conexao.desconectar(conn)
+            try:
+                if conexao.execute("select count(*) from cargo where carcargo = ? and empCnpj = ?;", (self.carCargo, self.empCnpj)).data[0][0] > 0:
+                    return Response(400, 'Cargo já existente para está empresa!', {})
+                query = "insert into cargo values (null, ?, ?) returning *;"
+                result = conexao.execute(query, (self.__carCargo, self.__empCnpj))
+                self.carId = result.data[0][0]
+            except(Exception, sqliteError) as error:
+                return Response(500, 'Erro ao cadastrar o cargo!', {error})
+            return Response(200, 'Cargo cadastrado com sucesso!', {})
 
     @classmethod
     def read(cls, empCnpj):
-        conexao = ConexaoSqLite()
-        conn = conexao.conectar()
-        try:
-            cursor = conn.cursor()
+        with ConexaoSqLite() as conexao:
+            if conexao is None:
+                return Response(500, 'Erro ao conectar com o banco de dados!', {})
 
-            # Listando cargos da empresa
-            cursor.execute("select * from cargo where empCnpj = ?;", (empCnpj,))
-            result = cursor.fetchall()
-            cargos = []
-            for cargo in result:
-                cargos.append(Cargo(*cargo))
-            conn.commit()
-            return Response(200, 'Cargos listadas com sucesso!', cargos)
+            try:
+                if conexao.execute("select count(*) from empresa where empcnpj = ?;", (empCnpj,)).data[0][0] == 0:
+                    return Response(404, 'Empresa inexistente!', {})
 
-        except(Exception, sqliteError) as error:
-            conn.rollback()
-            return Response(500, 'Erro ao listar cargos!', error)
-        finally:
-            cursor.close()
-            conexao.desconectar(conn)
+                query = "select * from cargo where empCnpj = ?;"
+                retorno = conexao.execute(query, (empCnpj,))
+                cargos = []
+                for cargo in retorno.data:
+                    cargos.append(cls(*cargo))
+
+            except(Exception, sqliteError) as error:
+                return Response(500, 'Erro ao ler os cargos!', {error})
+
+            return Response(200, 'Cargos lidos com sucesso!', cargos)
 
     def delete(self):
-        conexao = ConexaoSqLite()
-        response = conexao.execute("select carid, carcargo from cargo where carcargo = '{}' and  empCnpj = '{}';".format(self.__carCargo, self.__empCnpj))
-        if len(response.data) == 1:
-            self.carId = int(response.data[0][0])
-            response = conexao.execute("delete from cargo where carid = {}".format(self.__carId))
-            if response.code == 200:
-                return Response(200, "Cargo deletada com sucesso!", {})
-            else:
-                return Response(500, "Erro ao deletar cargo!", {})
-        else:
-            return Response(404, "Cargo não encontrada!", {})
+        with ConexaoSqLite() as conexao:
+            if conexao is None:
+                return Response(500, 'Erro ao conectar com o banco de dados!', {})
+
+            try:
+                if conexao.execute("select count(*) from cargo where carid = ?;", (self.__carId,)).data[0][0] == 0:
+                    return Response(404, 'Cargo inexistente!', {})
+
+                query = "delete from cargo where carid = ?;"
+                conexao.execute(query, (self.carId,))
+
+            except(Exception, sqliteError) as error:
+                return Response(500, 'Erro ao deletar o cargo!', {error})
+
+            return Response(200, 'Cargo deletado com sucesso!', {})
 
     def update(self):
-        conexao = ConexaoSqLite()
-        if (conexao.execute("select count(*) from cargo where carid = {};".format( self.__carId))).data[0][0] == 1:
-            if (conexao.execute("update cargo set carcargo = '{}' where carid = {};".format(self.__carCargo, self.__carId))).code == 200:
-                return Response(200, "Cargo atualizada com sucesso!", {})
-            else:
-                return Response(500, "Erro ao atualizar cargo!", {})
-        else:
-            return Response(404, "Cargo não encontrada!", {})
+        with ConexaoSqLite() as conexao:
+            if conexao is None:
+                return Response(500, 'Erro ao conectar com o banco de dados!', {})
+
+            try:
+                if conexao.execute("select count(*) from cargo where carid = ?;", (self.__carId,)).data[0][0] == 0:
+                    return Response(404, 'Cargo inexistente!', {})
+
+                query = "update cargo set carcargo = ? where carid = ? returning *;"
+                cargo = conexao.execute(query, (self.__carCargo, self.__carId)).data
+
+            except(Exception, sqliteError) as error:
+                return Response(500, 'Erro ao atualizar o cargo!', {error})
+
+            return Response(200, 'Cargo atualizado com sucesso!', cargo)
+
+    #region Properties(Getters e Setters)
     @property
     def carId(self):
         return self.__carId
@@ -127,3 +121,4 @@ class Cargo:
 
     def __str__(self):
         return f"carId: {self.__carId}\ncarCargo: {self.__carCargo}\nempCnpj: {self.__empCnpj}"
+    #endregion
