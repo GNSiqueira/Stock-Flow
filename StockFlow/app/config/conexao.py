@@ -1,33 +1,28 @@
 import sqlite3 as sqlite
 from sqlite3 import Error as sqliteError
 from app.config.response import Response
+from os.path import exists
+
 class ConexaoSqLite:
     def __init__(self, database='StockFlow.db') -> None:
         self.__database = database
         self.conn = None
         self.cursor = None
         self.__erro = False
-
-    # def conectar(self):
-    #     try:
-    #         self.conn = sqlite.connect(self.__database)
-    #         self.cursor = self.conn.cursor()
-    #         return self.conn
-    #     except (Exception, sqliteError) as error:
-    #         return Response(500, 'Error connecting to database', error)
-
-    # def desconectar(self):
-    #     try:
-    #         if self.conn:
-    #             self.conn.close()
-    #         return Response(200, 'Success disconnecting from database', {})
-    #     except (Exception, sqliteError) as error:
-    #         return Response(500, 'Error disconnecting from database', error)
+        if not exists(self.__database):
+            conn = sqlite.connect(self.__database)
+            conn.cursor().execute("PRAGMA foreign_keys = ON;")
+            conn.commit()
+            db = ConexaoSqLite()
+            db.create_table()
+            db.dados_iniciais()
+            conn.close()
 
     def __enter__(self):
         try:
             self.conn = sqlite.connect(self.__database)
             self.cursor = self.conn.cursor()
+            self.cursor.execute("PRAGMA foreign_keys = ON;")
             return self
         except (Exception, sqliteError) as error:
             return Response(500, 'Error connecting to database', error)
@@ -77,6 +72,7 @@ class ConexaoSqLite:
 
                 conexao.cursor.executescript("""
                 begin;
+                PRAGMA foreign_keys = ON;
                 -- Tabela Empresa
                 create table if not exists Empresa (
                     empCnpj varchar(18),
